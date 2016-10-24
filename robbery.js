@@ -79,8 +79,10 @@ function translateToOtherZone(arrForName, flagOfFromOrTo) {
         }
         var currentDate = createDate(arrData);
         var dateFromWithZone = new Date(currentDate);
-        var newWeekDay = translateWeekDays[String(dateFromWithZone).substring(0, 3)];
-        var arrNewData = String(dateFromWithZone).split(' ');
+        // console.info(dateFromWithZone);
+        // console.info(dateFromWithZone.toUTCString());
+        var newWeekDay = translateWeekDays[String(dateFromWithZone.toUTCString()).substring(0, 3)];
+        var arrNewData = String(dateFromWithZone.toUTCString()).split(' ');
         var time = arrNewData[4].split(':');
         var newHourInZone = time[0];
         var newMinuteInZone = time[1];
@@ -357,12 +359,12 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
         {
             from:
             {
-                hour: String(Number(workFrom.substring(0, 2)) - Number(timeZone) + 5),
+                hour: String(Number(workFrom.substring(0, 2)) - Number(timeZone)),
                 minute: workFrom.substring(3, 5)
             },
             to:
             {
-                hour: String(Number(workTo.substring(0, 2)) - Number(timeZone) + 5),
+                hour: String(Number(workTo.substring(0, 2)) - Number(timeZone)),
                 minute: workTo.substring(3, 5)
             }
         };
