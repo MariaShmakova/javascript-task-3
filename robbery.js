@@ -79,8 +79,6 @@ function translateToOtherZone(arrForName, flagOfFromOrTo) {
         }
         var currentDate = createDate(arrData);
         var dateFromWithZone = new Date(currentDate);
-        // console.info(dateFromWithZone);
-        // console.info(dateFromWithZone.toUTCString());
         var newWeekDay = translateWeekDays[String(dateFromWithZone.toUTCString()).substring(0, 3)];
         var arrNewData = String(dateFromWithZone.toUTCString()).split(' ');
         var time = arrNewData[4].split(':');
@@ -247,7 +245,6 @@ function foundOverlap(firstSegment, secondSegment, thirdSegment) {
     var thirdLeftMinute = thirdSegment.fromHourInZone * 60 + Number(thirdSegment.fromMinuteInZone);
     var max = Math.max(firstLeftMinute, secLeftMinute, thirdLeftMinute);
     var min = prepareToFoundAndSearchMin(firstSegment, secondSegment, thirdSegment);
-
     if (min === -1) {
         return 0;
     }
@@ -371,7 +368,11 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
 
     var ansToExists = false;
     var maxFreePeriod = mainActionToFound(schedule, duration, workHoursWithZone);
-    if (maxFreePeriod.duration >= duration) {
+
+    var t = Number(timeZone);
+    var tempHour = Number(maxFreePeriod.beginHour);
+    var checkToOneDay = (tempHour + t) >= 0;
+    if ((maxFreePeriod.duration >= duration) && checkToOneDay) {
         ansToExists = true;
     }
 
@@ -393,9 +394,14 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
          * @returns {String}
          */
         format: function (template) {
-            var t = Number(timeZone);
+            var answHour;
+            if (tempHour + t < 10) {
+                answHour = '0' + String(tempHour + t);
+            } else {
+                answHour = tempHour + t;
+            }
             if (ansToExists) {
-                template = template.replace(/%HH/, Number(maxFreePeriod.beginHour) + t);
+                template = template.replace(/%HH/, answHour);
                 template = template.replace(/%MM/, maxFreePeriod.beginMinute);
                 template = template.replace(/%DD/, maxFreePeriod.weekDay);
 
