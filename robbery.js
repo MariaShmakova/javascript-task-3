@@ -44,6 +44,7 @@ var translateWeekDays = {
     'Sut': 'СБ',
     'Sun': 'ВС'
 };
+var timeZone;
 
 function createDate(arrData) {
     var day = arrData[0];
@@ -100,14 +101,14 @@ function divisionEmployment(arrForName) {
                 to: period.to,
                 fromDayInZone: period.toDayInZone,
                 toDayInZone: period.toDayInZone,
-                fromHourInZone: '00',
+                fromHourInZone: '00' - Number(timeZone),
                 fromMinuteInZone: '00',
                 toHourInZone: period.toHourInZone,
                 toMinuteInZone: period.toMinuteInZone
             };
             arrForName.push(newEmpl);
             period.toDayInZone = period.fromDayInZone;
-            period.toHourInZone = '23';
+            period.toHourInZone = '23' - Number(timeZone);
             period.toMinuteInZone = '59';
         }
     });
@@ -350,7 +351,7 @@ function mainActionToFound(schedule, duration, workHoursWithZone) {
 exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     // Перевод часов работы банка в удобный формат с учетом часового пояса +5
     var workFrom = workingHours.from;
-    var timeZone = workFrom.substring(6);
+    timeZone = workFrom.substring(6);
     var workTo = workingHours.to;
     var workHoursWithZone =
         {
@@ -368,7 +369,6 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
 
     var ansToExists = false;
     var maxFreePeriod = mainActionToFound(schedule, duration, workHoursWithZone);
-
     var t = Number(timeZone);
     var tempHour = Number(maxFreePeriod.beginHour);
     var checkToOneDay = (tempHour + t) >= 0;
