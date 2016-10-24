@@ -392,7 +392,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
          */
         format: function (template) {
             if (ansToExists) {
-                template = template.replace(/%HH/, maxFreePeriod.beginHour);
+                template = template.replace(/%HH/, Number(maxFreePeriod.beginHour) + 5);
                 template = template.replace(/%MM/, maxFreePeriod.beginMinute);
                 template = template.replace(/%DD/, maxFreePeriod.weekDay);
 
