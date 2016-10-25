@@ -53,7 +53,7 @@ function createDate(arrData) {
     var zone = arrData[3];
     var currentDay = benchmarkWeekDays[day];
     var currentDate = day + ' ' + currentDay.month + ' ' + currentDay.day + ' ';
-    currentDate += currentDay.year + ' ' + hour + ':' + min + ':00 GMT+0' + zone + '00';
+    currentDate += currentDay.year + ' ' + hour + ':' + min + ':00 GMT+' + zone + '00';
 
     return currentDate;
 }
@@ -80,8 +80,8 @@ function translateToOtherZone(arrForName, flagOfFromOrTo) {
         }
         var currentDate = createDate(arrData);
         var dateFromWithZone = new Date(currentDate);
-        var newWeekDay = translateWeekDays[String(dateFromWithZone.toUTCString()).substring(0, 3)];
-        var arrNewData = String(dateFromWithZone.toUTCString()).split(' ');
+        var newWeekDay = translateWeekDays[String(dateFromWithZone).substring(0, 3)];
+        var arrNewData = String(dateFromWithZone).split(' ');
         var time = arrNewData[4].split(':');
         var newHourInZone = time[0];
         var newMinuteInZone = time[1];
@@ -350,7 +350,6 @@ function mainActionToFound(schedule, duration, workHoursWithZone) {
         }
     }
 
-
     return maxPeriod;
 }
 
@@ -362,12 +361,12 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
         {
             from:
             {
-                hour: String(Number(workFrom.substring(0, 2)) - Number(timeZone)),
+                hour: Number(workFrom.substring(0, 2)),
                 minute: workFrom.substring(3, 5)
             },
             to:
             {
-                hour: String(Number(workTo.substring(0, 2)) - Number(timeZone)),
+                hour: Number(workTo.substring(0, 2)),
                 minute: workTo.substring(3, 5)
             }
         };
@@ -401,9 +400,9 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
         format: function (template) {
             var answHour;
             if (tempHour + t < 10) {
-                answHour = '0' + String(tempHour + t);
+                answHour = '0' + String(tempHour + t - timeZone);
             } else {
-                answHour = tempHour + t;
+                answHour = tempHour + t - timeZone;
             }
             if (ansToExists) {
                 template = template.replace(/%HH/, answHour);
