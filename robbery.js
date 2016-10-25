@@ -113,40 +113,6 @@ function divisionEmployment(arrForName) {
         }
     });
 }
-function setValueToOrFrom(period, workHoursWithZone, flagFromOrTo) {
-    if (flagFromOrTo === 'to') {
-        period.toHourInZone = workHoursWithZone.to.hour;
-        period.toMinuteInZone = workHoursWithZone.to.minute;
-    } else {
-        period.fromHourInZone = workHoursWithZone.from.hour;
-        period.fromMinuteInZone = workHoursWithZone.from.minute;
-    }
-}
-function limitEmploymentToWorkBank(workHoursWithZone, arrForName) {
-    var index = 0;
-    var flagToDelete;
-    arrForName.forEach(function (period) {
-        flagToDelete = false;
-        var strFromTime = String(period.fromHourInZone) + period.fromMinuteInZone;
-        var strFromWorkBank = String(workHoursWithZone.from.hour) + workHoursWithZone.from.minute;
-        var strToTime = String(period.toHourInZone) + period.toMinuteInZone;
-        var strToWorkBank = String(workHoursWithZone.to.hour) + workHoursWithZone.to.minute;
-        if (Number(strFromTime) >= Number(strToWorkBank)) {
-            flagToDelete = true;
-        } else if (Number(strToTime) > Number(strToWorkBank)) {
-            setValueToOrFrom(period, workHoursWithZone, 'to');
-        }
-        if (Number(strToTime) <= Number(strFromWorkBank)) {
-            flagToDelete = true;
-        } else if (Number(strFromTime) < Number(strFromWorkBank)) {
-            setValueToOrFrom(period, workHoursWithZone, 'from');
-        }
-        if (flagToDelete) {
-            arrForName.splice(index, 1);
-        }
-        index++;
-    });
-}
 
 function compareStartTime(period1, period2) {
     return period1.fromHourInZone - period2.fromHourInZone;
@@ -175,48 +141,6 @@ function employmentDays(arrForName) {
     var forWed = scheduleForWednesday['СР'].sort(compareStartTime);
 
     return [forMon, forTue, forWed];
-}
-
-function freeTimeForName(empDays, workHoursWithZone) {
-    var arrFreeForName = [];
-    empDays.forEach(function (arrForDay) {
-        var countPeriod = arrForDay.length;
-        if (countPeriod !== 0) {
-            var firstWrite = {
-                fromDayInZone: arrForDay[0].fromDayInZone,
-                fromHourInZone: workHoursWithZone.from.hour,
-                fromMinuteInZone: workHoursWithZone.from.minute,
-                toDayInZone: arrForDay[0].toDayInZone,
-                toHourInZone: arrForDay[0].fromHourInZone,
-                toMinuteInZone: arrForDay[0].fromMinuteInZone
-            };
-            arrFreeForName.push(firstWrite);
-
-            var lastWrite = {
-                fromDayInZone: arrForDay[countPeriod - 1].fromDayInZone,
-                fromHourInZone: arrForDay[countPeriod - 1].toHourInZone,
-                fromMinuteInZone: arrForDay[countPeriod - 1].toMinuteInZone,
-                toDayInZone: arrForDay[countPeriod - 1].toDayInZone,
-                toHourInZone: workHoursWithZone.to.hour,
-                toMinuteInZone: workHoursWithZone.to.minute
-            };
-            arrFreeForName.push(lastWrite);
-            for (var i = 1; i < countPeriod; i++) {
-                var middleWrite = {
-                    fromDayInZone: arrForDay[i].fromDayInZone,
-                    fromHourInZone: arrForDay[i - 1].toHourInZone,
-                    fromMinuteInZone: arrForDay[i - 1].toMinuteInZone,
-                    toDayInZone: arrForDay[i].toDayInZone,
-                    toHourInZone: arrForDay[i].fromHourInZone,
-                    toMinuteInZone: arrForDay[i].fromMinuteInZone
-                };
-                arrFreeForName.push(middleWrite);
-            }
-        }
-
-    });
-
-    return arrFreeForName;
 }
 
 function prepareToFoundAndSearchMin(firstSegment, secondSegment, thirdSegment) {
@@ -306,27 +230,109 @@ function run(needData, indexD, indexR, flagToFound) {
     };
 }
 
+function closeHoursBank(workHoursWithZone) {
+    var firstClose = {
+        open: {
+            hour: '00',
+            minute: '00'
+        },
+        close: {
+            hour: workHoursWithZone.from.hour,
+            minute: workHoursWithZone.from.minute
+        }
+    };
+    var secondClose = {
+        open: {
+            hour: workHoursWithZone.to.hour,
+            minute: workHoursWithZone.to.minute
+        },
+        close: {
+            hour: '23',
+            minute: '59'
+        }
+    };
+    var hoursClose = [];
+    hoursClose.push(firstClose);
+    hoursClose.push(secondClose);
+
+    return hoursClose;
+}
+
 function createScheduleFreeTime(schedule, duration, workHoursWithZone) {
     var scheduleFreeTime = {
         Danny: [],
         Rusty: [],
         Linus: []
     };
+
+    var bankClose = closeHoursBank(workHoursWithZone);
     for (var key in schedule) {
         if (schedule.hasOwnProperty(key)) {
             var name = schedule[key];
             translateToOtherZone(name, 'from');
             translateToOtherZone(name, 'to');
             divisionEmployment(name);
-            limitEmploymentToWorkBank(workHoursWithZone, name);
             var empDays = employmentDays(name);
-            var freeTime = freeTimeForName(empDays, workHoursWithZone);
+            var freeTime = freeTimeForName(empDays, bankClose, workHoursWithZone);
             scheduleFreeTime[key] = freeTime;
         }
     }
 
     return scheduleFreeTime;
 }
+
+function freeTimeForName(empDays, bankClose, workHoursWithZone) {
+    var arrFreeForName = [];
+    empDays.forEach(function (arrForDay) {
+        var countPeriod = arrForDay.length;
+        if (countPeriod !== 0) {
+            var firstWrite = {
+                fromDayInZone: arrForDay[0].fromDayInZone,
+                fromHourInZone: bankClose[0].close.hour,
+                fromMinuteInZone: bankClose[0].close.minute,
+                toDayInZone: arrForDay[0].toDayInZone,
+                toHourInZone: arrForDay[0].fromHourInZone,
+                toMinuteInZone: arrForDay[0].fromMinuteInZone
+            };
+            arrFreeForName.push(firstWrite);
+
+            var lastWrite = {
+                fromDayInZone: arrForDay[countPeriod - 1].fromDayInZone,
+                fromHourInZone: arrForDay[countPeriod - 1].toHourInZone,
+                fromMinuteInZone: arrForDay[countPeriod - 1].toMinuteInZone,
+                toDayInZone: arrForDay[countPeriod - 1].toDayInZone,
+                toHourInZone: bankClose[1].open.hour,
+                toMinuteInZone: bankClose[1].open.minute
+            };
+            arrFreeForName.push(lastWrite);
+            for (var i = 1; i < countPeriod; i++) {
+                var middleWrite = {
+                    fromDayInZone: arrForDay[i].fromDayInZone,
+                    fromHourInZone: arrForDay[i - 1].toHourInZone,
+                    fromMinuteInZone: arrForDay[i - 1].toMinuteInZone,
+                    toDayInZone: arrForDay[i].toDayInZone,
+                    toHourInZone: arrForDay[i].fromHourInZone,
+                    toMinuteInZone: arrForDay[i].fromMinuteInZone
+                };
+                arrFreeForName.push(middleWrite);
+            }
+        } else {
+            var write = {
+                fromDayInZone: '',
+                fromHourInZone: workHoursWithZone.from.hour,
+                fromMinuteInZone: workHoursWithZone.from.minute,
+                toDayInZone: '',
+                toHourInZone: workHoursWithZone.to.hour,
+                toMinuteInZone: workHoursWithZone.to.minute
+            };
+            arrFreeForName.push(write);
+        }
+
+    });
+
+    return arrFreeForName;
+}
+
 
 function mainActionToFound(schedule, duration, workHoursWithZone) {
     var scheduleFreeTime = createScheduleFreeTime(schedule, duration, workHoursWithZone);
@@ -349,7 +355,6 @@ function mainActionToFound(schedule, duration, workHoursWithZone) {
 }
 
 exports.getAppropriateMoment = function (schedule, duration, workingHours) {
-    // Перевод часов работы банка в удобный формат с учетом часового пояса +5
     var workFrom = workingHours.from;
     timeZone = workFrom.substring(6);
     var workTo = workingHours.to;
@@ -423,7 +428,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
                 return true;
             } */
 
-            return false;
+            return true;
         }
     };
 };
