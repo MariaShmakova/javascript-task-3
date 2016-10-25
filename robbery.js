@@ -286,7 +286,7 @@ function createScheduleFreeTime(schedule, duration, workHoursWithZone) {
 
     return scheduleFreeTime;
 }
-
+var defaultDay = 'ПН';
 function freeTimeForName(empDays, bankClose, workHoursWithZone) {
     var arrFreeForName = [];
     empDays.forEach(function (arrForDay) {
@@ -300,6 +300,7 @@ function freeTimeForName(empDays, bankClose, workHoursWithZone) {
                 toHourInZone: arrForDay[0].fromHourInZone,
                 toMinuteInZone: arrForDay[0].fromMinuteInZone
             };
+
             arrFreeForName.push(firstWrite);
 
             var lastWrite = {
@@ -310,6 +311,7 @@ function freeTimeForName(empDays, bankClose, workHoursWithZone) {
                 toHourInZone: bankClose[1].open.hour,
                 toMinuteInZone: bankClose[1].open.minute
             };
+            defaultDay = lastWrite.fromDayInZone;
             arrFreeForName.push(lastWrite);
             for (var i = 1; i < countPeriod; i++) {
                 var middleWrite = {
@@ -324,10 +326,10 @@ function freeTimeForName(empDays, bankClose, workHoursWithZone) {
             }
         } else {
             var write = {
-                fromDayInZone: '',
+                fromDayInZone: defaultDay,
                 fromHourInZone: workHoursWithZone.from.hour,
                 fromMinuteInZone: workHoursWithZone.from.minute,
-                toDayInZone: '',
+                toDayInZone: defaultDay,
                 toHourInZone: workHoursWithZone.to.hour,
                 toMinuteInZone: workHoursWithZone.to.minute
             };
