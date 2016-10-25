@@ -101,14 +101,14 @@ function divisionEmployment(arrForName) {
                 to: period.to,
                 fromDayInZone: period.toDayInZone,
                 toDayInZone: period.toDayInZone,
-                fromHourInZone: '00' - Number(timeZone),
+                fromHourInZone: '00',
                 fromMinuteInZone: '00',
                 toHourInZone: period.toHourInZone,
                 toMinuteInZone: period.toMinuteInZone
             };
             arrForName.push(newEmpl);
             period.toDayInZone = period.fromDayInZone;
-            period.toHourInZone = '23' - Number(timeZone);
+            period.toHourInZone = '23';
             period.toMinuteInZone = '59';
         }
     });
@@ -123,10 +123,13 @@ function employmentDays(arrForName) {
     var scheduleForTuesday = { 'ВТ': [] };
     var scheduleForWednesday = { 'СР': [] };
     arrForName.forEach(function (period) {
+        if (period.fromDayInZone === 'ВС') {
+            period.fromDayInZone = 'ПН';
+            period.toDayInZone = 'ПН';
+            period.fromHourInZone = Number(period.fromHourInZone) - 24;
+            period.toHourInZone = Number(period.toHourInZone) - 24;
+        }
         switch (period.fromDayInZone) {
-            case 'ВС':
-                scheduleForMondey['ПН'].push(period);
-                break;
             case 'ПН':
                 scheduleForMondey['ПН'].push(period);
                 break;
@@ -358,6 +361,7 @@ function mainActionToFound(schedule, duration, workHoursWithZone) {
 }
 
 exports.getAppropriateMoment = function (schedule, duration, workingHours) {
+    // Перевод часов работы банка в удобный формат с учетом часового пояса
     var workFrom = workingHours.from;
     timeZone = workFrom.substring(6);
     var workTo = workingHours.to;
