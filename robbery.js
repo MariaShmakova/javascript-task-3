@@ -124,6 +124,9 @@ function employmentDays(arrForName) {
     var scheduleForWednesday = { 'СР': [] };
     arrForName.forEach(function (period) {
         switch (period.fromDayInZone) {
+            case 'ВС':
+                scheduleForMondey['ПН'].push(period);
+                break;
             case 'ПН':
                 scheduleForMondey['ПН'].push(period);
                 break;
