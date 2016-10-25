@@ -101,7 +101,7 @@ function divisionEmployment(arrForName) {
                 to: period.to,
                 fromDayInZone: period.toDayInZone,
                 toDayInZone: period.toDayInZone,
-                fromHourInZone: '00' - Number(timeZone),
+                fromHourInZone: '00' + Number(timeZone),
                 fromMinuteInZone: '00',
                 toHourInZone: period.toHourInZone,
                 toMinuteInZone: period.toMinuteInZone
