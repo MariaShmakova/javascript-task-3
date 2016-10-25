@@ -53,7 +53,7 @@ function createDate(arrData) {
     var zone = arrData[3];
     var currentDay = benchmarkWeekDays[day];
     var currentDate = day + ' ' + currentDay.month + ' ' + currentDay.day + ' ';
-    currentDate += currentDay.year + ' ' + hour + ':' + min + ':00 GMT+' + zone + '00';
+    currentDate += currentDay.year + ' ' + hour + ':' + min + ':00 GMT+0' + zone + '00';
 
     return currentDate;
 }
@@ -80,8 +80,8 @@ function translateToOtherZone(arrForName, flagOfFromOrTo) {
         }
         var currentDate = createDate(arrData);
         var dateFromWithZone = new Date(currentDate);
-        var newWeekDay = translateWeekDays[String(dateFromWithZone).substring(0, 3)];
-        var arrNewData = String(dateFromWithZone).split(' ');
+        var newWeekDay = translateWeekDays[String(dateFromWithZone.toUTCString()).substring(0, 3)];
+        var arrNewData = String(dateFromWithZone.toUTCString()).split(' ');
         var time = arrNewData[4].split(':');
         var newHourInZone = time[0];
         var newMinuteInZone = time[1];
@@ -101,7 +101,7 @@ function divisionEmployment(arrForName) {
                 to: period.to,
                 fromDayInZone: period.toDayInZone,
                 toDayInZone: period.toDayInZone,
-                fromHourInZone: '00' + Number(timeZone),
+                fromHourInZone: '00' - Number(timeZone),
                 fromMinuteInZone: '00',
                 toHourInZone: period.toHourInZone,
                 toMinuteInZone: period.toMinuteInZone
@@ -350,6 +350,7 @@ function mainActionToFound(schedule, duration, workHoursWithZone) {
         }
     }
 
+
     return maxPeriod;
 }
 
@@ -361,12 +362,12 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
         {
             from:
             {
-                hour: Number(workFrom.substring(0, 2)),
+                hour: String(Number(workFrom.substring(0, 2)) - Number(timeZone)),
                 minute: workFrom.substring(3, 5)
             },
             to:
             {
-                hour: Number(workTo.substring(0, 2)),
+                hour: String(Number(workTo.substring(0, 2)) - Number(timeZone)),
                 minute: workTo.substring(3, 5)
             }
         };
@@ -400,9 +401,9 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
         format: function (template) {
             var answHour;
             if (tempHour + t < 10) {
-                answHour = '0' + String(tempHour + t - timeZone);
+                answHour = '0' + String(tempHour + t);
             } else {
-                answHour = tempHour + t - timeZone;
+                answHour = tempHour + t;
             }
             if (ansToExists) {
                 template = template.replace(/%HH/, answHour);
