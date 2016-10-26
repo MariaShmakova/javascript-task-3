@@ -254,6 +254,9 @@ function bankCloseForever(workingBankInMin) {
     if ((workingBankInMin.to - workingBankInMin.from) === 0) {
         return true;
     }
+    if ((workingBankInMin.to - workingBankInMin.from) < 0) {
+        return true;
+    }
 
     return false;
 }
