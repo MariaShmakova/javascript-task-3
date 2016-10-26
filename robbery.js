@@ -14,6 +14,11 @@ exports.isStar = false;
  * @param {String} workingHours.to – Время закрытия, например, "18:00+5"
  * @returns {Object}
  */
+var DAYS = {
+    ПН: 1,
+    ВТ: 2,
+    СР: 3
+};
 var mainZone;
 var signsWeekDays = {
     1: 'ПН',
@@ -150,6 +155,30 @@ function changeSchedual(begin, end) {
 
     return [firstPeriod, secondPeriod];
 }
+function changeSchedualBigInterval(begin, end) {
+    var firstFrom = begin.day + ' ' + begin.hour + ':' + begin.minute;
+    firstFrom += '+' + mainZone;
+    var firstTo = begin.day + ' 23:59+' + mainZone;
+    var secondFrom = end.day + ' 00:00+' + mainZone;
+    var secondTo = end.day + ' ' + end.hour + ':' + end.minute + '+' + mainZone;
+    var middleFrom = signsWeekDays[Number(DAYS[begin.day]) + 1] + ' 00:00+' + mainZone;
+    var middleTo = signsWeekDays[Number(DAYS[begin.day]) + 1] + ' 23:59+' + mainZone;
+
+    var firstPeriod = {
+        from: firstFrom,
+        to: firstTo
+    };
+    var secondPeriod = {
+        from: secondFrom,
+        to: secondTo
+    };
+    var middlePeriod = {
+        from: middleFrom,
+        to: middleTo
+    };
+
+    return [firstPeriod, secondPeriod, middlePeriod];
+}
 function fillingArray(schedule, daysWeek) {
     var beginBusy;
     var endBusy;
@@ -176,10 +205,16 @@ function addNewWrites(schedule) {
         schedule[name].forEach(function (period) {
             beginBusy = parseBusyPeriod(period.from);
             endBusy = parseBusyPeriod(period.to);
-            if (beginBusy.day !== endBusy.day) {
-                var newWrites = changeSchedual(beginBusy, endBusy, name);
+            if ((DAYS[endBusy.day] - DAYS[beginBusy.day]) === 1) {
+                var newWrites = changeSchedual(beginBusy, endBusy);
                 schedule[name].push(newWrites[0]);
                 schedule[name].push(newWrites[1]);
+            }
+            if ((DAYS[endBusy.day] - DAYS[beginBusy.day]) === 2) {
+                var writes = changeSchedualBigInterval(beginBusy, endBusy);
+                schedule[name].push(writes[0]);
+                schedule[name].push(writes[1]);
+                schedule[name].push(writes[2]);
             }
         });
     });
