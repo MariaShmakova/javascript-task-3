@@ -186,12 +186,12 @@ function addNewWrites(schedule) {
 
     return schedule;
 }
-function getRobberyMoment(duration, schedule, daysWeek) {
+function getRobberyMoment(duration, schedule, daysWeek, bankFrom) {
     var answer;
     if (duration === 0) {
         answer = {
             day: 'ПН',
-            timeInMin: 0
+            timeInMin: bankFrom
         };
     } else {
         schedule = addNewWrites(schedule);
@@ -207,7 +207,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     mainZone = dataStartBank[2];
     var workingBankInMin = {
         from: timeToMinute(dataStartBank[0], dataStartBank[1]),
-        to: timeToMinute(dataFinishBank[0], dataFinishBank[1]) - 1
+        to: timeToMinute(dataFinishBank[0], dataFinishBank[1])
     };
 
     var daysWeek = {
@@ -222,7 +222,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
         daysWeek['ВТ'][minuteBank] = 1;
         daysWeek['СР'][minuteBank] = 1;
     }
-    var answer = getRobberyMoment(duration, schedule, daysWeek);
+    var answer = getRobberyMoment(duration, schedule, daysWeek, workingBankInMin.from);
 
 
     var ansFormatTime = translateMinToTime(answer.timeInMin);
