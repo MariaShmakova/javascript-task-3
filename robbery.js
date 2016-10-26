@@ -250,6 +250,13 @@ function addNewWrites(schedule) {
 
     return schedule;
 }
+function bankCloseForever(workingBankInMin) {
+    if ((workingBankInMin.to - workingBankInMin.from) === 0) {
+        return true;
+    }
+
+    return false;
+}
 function getRobberyMoment(duration, schedule, daysWeek, bankFrom) {
     var answer;
     if (duration === 0) {
@@ -297,6 +304,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
 
     var ansFormatTime = translateMinToTime(answer.timeInMin);
     var checkUncorrectData = checkUncorrect(dataFinishBank[0], dataFinishBank[1]);
+    var close = bankCloseForever(workingBankInMin);
 
     return {
 
@@ -305,7 +313,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
          * @returns {Boolean}
          */
         exists: function () {
-            if (answer !== '' && !checkUncorrectData && !allBusy(schedule)) {
+            if (answer !== '' && !checkUncorrectData && !allBusy(schedule) && !close) {
                 return true;
             }
 
@@ -320,7 +328,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
          * @returns {String}
          */
         format: function (template) {
-            if (answer !== '' && !checkUncorrectData && !allBusy(schedule)) {
+            if (answer !== '' && !checkUncorrectData && !allBusy(schedule) && !close) {
                 var ansHour = formatShortTime(ansFormatTime.hour);
                 var ansMin = formatShortTime(ansFormatTime.min);
                 template = template.replace(/%HH/, ansHour);
