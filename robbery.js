@@ -207,7 +207,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     mainZone = dataStartBank[2];
     var workingBankInMin = {
         from: timeToMinute(dataStartBank[0], dataStartBank[1]),
-        to: timeToMinute(dataFinishBank[0], dataFinishBank[1])
+        to: timeToMinute(dataFinishBank[0], dataFinishBank[1]) - 1
     };
 
     var daysWeek = {
