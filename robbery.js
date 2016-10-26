@@ -17,13 +17,21 @@ exports.isStar = false;
 var DAYS = {
     ПН: 1,
     ВТ: 2,
-    СР: 3
+    СР: 3,
+    ЧТ: 4,
+    ПТ: 5,
+    СБ: 6,
+    ВС: 7
 };
 var mainZone;
 var signsWeekDays = {
     1: 'ПН',
     2: 'ВТ',
-    3: 'СР'
+    3: 'СР',
+    4: 'ЧТ',
+    5: 'ПТ',
+    6: 'СБ',
+    7: 'ВС'
 };
 
 function returnDayWeek(hourWithoutZone, diffZone, dayWithoutZone) {
@@ -189,9 +197,10 @@ function fillingArray(schedule, daysWeek) {
             var beginBusyMin = timeToMinute(beginBusy.hour, beginBusy.minute);
             var endBusyMin = timeToMinute(endBusy.hour, endBusy.minute);
             for (var j = beginBusyMin; j < endBusyMin; j++) {
-                if (daysWeek[beginBusy.day][j] === 1) {
+                if (DAYS[beginBusy.day] < 4) {
                     daysWeek[beginBusy.day][j] = 0;
                 }
+
             }
         });
     });
