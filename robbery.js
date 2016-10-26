@@ -201,6 +201,13 @@ function getRobberyMoment(duration, schedule, daysWeek, bankFrom) {
 
     return answer;
 }
+function checkUncorrect(hourFinishBank, minuteFinishBank) {
+    if (hourFinishBank > 23 || minuteFinishBank > 59) {
+        return true;
+    }
+
+    return false;
+}
 exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     var dataStartBank = workingHours.from.split(/[:,+]/);
     var dataFinishBank = workingHours.to.split(/[:,+]/);
@@ -226,6 +233,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
 
 
     var ansFormatTime = translateMinToTime(answer.timeInMin);
+    var checkUncorrectData = checkUncorrect(dataFinishBank[0], dataFinishBank[1]);
 
     return {
 
@@ -234,7 +242,8 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
          * @returns {Boolean}
          */
         exists: function () {
-            if (answer !== '') {
+
+            if (answer !== '' && !checkUncorrectData) {
                 return true;
             }
 
@@ -249,7 +258,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
          * @returns {String}
          */
         format: function (template) {
-            if (answer !== '') {
+            if (answer !== '' && !checkUncorrectData) {
                 var ansHour = formatShortTime(ansFormatTime.hour);
                 var ansMin = formatShortTime(ansFormatTime.min);
                 template = template.replace(/%HH/, ansHour);
