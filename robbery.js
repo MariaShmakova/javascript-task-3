@@ -207,6 +207,26 @@ function fillingArray(schedule, daysWeek) {
 
     return daysWeek;
 }
+function allBusy(schedule) {
+    var beginBusy;
+    var endBusy;
+    var check = false;
+    Object.keys(schedule).forEach(function (name) {
+        schedule[name].forEach(function (period) {
+            beginBusy = parseBusyPeriod(period.from);
+            endBusy = parseBusyPeriod(period.to);
+            if ((DAYS[beginBusy.day] === 1) && DAYS[endBusy.day] > 3) {
+                check = true;
+            }
+
+        });
+    });
+    if (check) {
+        return true;
+    }
+
+    return false;
+}
 function addNewWrites(schedule) {
     var beginBusy;
     var endBusy;
@@ -275,7 +295,6 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     }
     var answer = getRobberyMoment(duration, schedule, daysWeek, workingBankInMin.from);
 
-
     var ansFormatTime = translateMinToTime(answer.timeInMin);
     var checkUncorrectData = checkUncorrect(dataFinishBank[0], dataFinishBank[1]);
 
@@ -286,8 +305,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
          * @returns {Boolean}
          */
         exists: function () {
-
-            if (answer !== '' && !checkUncorrectData) {
+            if (answer !== '' && !checkUncorrectData && !allBusy(schedule)) {
                 return true;
             }
 
@@ -302,7 +320,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
          * @returns {String}
          */
         format: function (template) {
-            if (answer !== '' && !checkUncorrectData) {
+            if (answer !== '' && !checkUncorrectData && !allBusy(schedule)) {
                 var ansHour = formatShortTime(ansFormatTime.hour);
                 var ansMin = formatShortTime(ansFormatTime.min);
                 template = template.replace(/%HH/, ansHour);
