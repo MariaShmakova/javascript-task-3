@@ -186,7 +186,21 @@ function addNewWrites(schedule) {
 
     return schedule;
 }
+function getRobberyMoment(duration, schedule, daysWeek) {
+    var answer;
+    if (duration === 0) {
+        answer = {
+            day: 'ПН',
+            timeInMin: 0
+        };
+    } else {
+        schedule = addNewWrites(schedule);
+        daysWeek = fillingArray(schedule, daysWeek);
+        answer = searchFreeMoment(daysWeek, duration);
+    }
 
+    return answer;
+}
 exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     var dataStartBank = workingHours.from.split(/[:,+]/);
     var dataFinishBank = workingHours.to.split(/[:,+]/);
@@ -208,9 +222,9 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
         daysWeek['ВТ'][minuteBank] = 1;
         daysWeek['СР'][minuteBank] = 1;
     }
-    schedule = addNewWrites(schedule);
-    daysWeek = fillingArray(schedule, daysWeek);
-    var answer = searchFreeMoment(daysWeek, duration);
+    var answer = getRobberyMoment(duration, schedule, daysWeek);
+
+
     var ansFormatTime = translateMinToTime(answer.timeInMin);
 
     return {
