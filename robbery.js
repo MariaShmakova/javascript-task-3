@@ -6,6 +6,103 @@
  */
 exports.isStar = false;
 
+var WEEK_DAYS = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
+var WEEK_DAYS_ROBBERY = ['ПН', 'ВТ', 'СР'];
+
+var benchmarkWeekDaysOnOctober = {
+     // 'Mon Oct 17 2016 00:00:01 GMT+0000'
+    'ПН': 17,
+    // 'Tue Oct 18 2016 00:00:01 GMT+0000' и т.д.
+    'ВТ': 18,
+    'СР': 19,
+    'ЧТ': 20,
+    'ПТ': 21,
+    'СБ': 22,
+    'ВС': 23
+};
+
+function convertTime(time) {
+    var reg = /[+,:]/;
+    var arrDataTime = String(time).split(reg);
+
+    return {
+        hours: Number(arrDataTime[0]),
+        minutes: Number(arrDataTime[1]),
+        zone: Number(arrDataTime[2])
+    };
+}
+
+function getDate(weekDayName, time) {
+    var day = benchmarkWeekDaysOnOctober[weekDayName];
+
+    return new Date(Date.UTC(2016, 9, day, time.hours - time.zone, time.minutes));
+}
+
+function convertDataTime(dataTime) {
+    var arrDataTime = String(dataTime).split(' ');
+    var weekDayName = arrDataTime[0];
+    var time = convertTime(arrDataTime[1]);
+
+    return getDate(weekDayName, time);
+}
+
+function compareTime(period1, period2) {
+    var timeDiff = period1.time - period2.time;
+    if (timeDiff !== 0) {
+        return timeDiff;
+    }
+    if (period1.type !== period2.type) {
+        return period1.type === 'open' ? 1 : -1;
+    }
+
+    return 0;
+}
+
+function periodsRobbery(schedule, workingHours) {
+    var periods = [];
+
+    var bankWorkingTime = {
+        from: convertTime(workingHours.from),
+        to: convertTime(workingHours.to)
+    };
+    WEEK_DAYS_ROBBERY.forEach(function (weekDayName) {
+        periods.push({ type: 'open', time: getDate(weekDayName, bankWorkingTime.from) });
+        periods.push({ type: 'close', time: getDate(weekDayName, bankWorkingTime.to) });
+    });
+
+    Object.keys(schedule).forEach(function (name) {
+        schedule[name].forEach(function (time) {
+            periods.push({ type: 'close', time: convertDataTime(time.from) });
+            periods.push({ type: 'open', time: convertDataTime(time.to) });
+        });
+    });
+
+    periods.sort(compareTime);
+
+    return periods;
+}
+
+function addZero(time) {
+    time = String(time);
+    if (time.length < 2) {
+        time = '0' + time;
+    }
+
+    return time;
+}
+
+function formatView(template, startTime, zone) {
+    var localDate = new Date(startTime);
+    localDate.setUTCHours(localDate.getUTCHours() + zone);
+    var hours = addZero(localDate.getUTCHours());
+    var minutes = addZero(localDate.getUTCMinutes());
+    template = template.replace(/%DD/, WEEK_DAYS[localDate.getUTCDay()]);
+    template = template.replace(/%HH/, hours);
+    template = template.replace(/%MM/, minutes);
+
+    return template;
+}
+
 /**
  * @param {Object} schedule – Расписание Банды
  * @param {Number} duration - Время на ограбление в минутах
@@ -14,300 +111,29 @@ exports.isStar = false;
  * @param {String} workingHours.to – Время закрытия, например, "18:00+5"
  * @returns {Object}
  */
-var DAYS = {
-    ПН: 1,
-    ВТ: 2,
-    СР: 3,
-    ЧТ: 4,
-    ПТ: 5,
-    СБ: 6,
-    ВС: 7
-};
-var mainZone;
-var signsWeekDays = {
-    1: 'ПН',
-    2: 'ВТ',
-    3: 'СР',
-    4: 'ЧТ',
-    5: 'ПТ',
-    6: 'СБ',
-    7: 'ВС'
-};
-
-function returnDayWeek(hourWithoutZone, diffZone, dayWithoutZone) {
-    var dayWithZone = dayWithoutZone;
-    var currentNumbDay;
-    for (var index in signsWeekDays) {
-        if (signsWeekDays[index] === dayWithoutZone) {
-            currentNumbDay = Number(index);
-        }
-    }
-    if ((Number(hourWithoutZone) + diffZone) >= 24) {
-        dayWithZone = signsWeekDays[currentNumbDay + 1];
-    }
-    if ((Number(hourWithoutZone) + diffZone) < 0) {
-        dayWithZone = signsWeekDays[currentNumbDay - 1];
-    }
-
-    return dayWithZone;
-}
-function returnHour(hour) {
-    var ansHour = hour;
-    if (Number(hour) >= 24) {
-        ansHour = Number(hour) - 24;
-    } else if (Number(hour) < 0) {
-        ansHour = 24 + Number(hour);
-    }
-
-    return ansHour;
-}
-function timeToMinute(hour, minute) {
-
-    return Number(hour) * 60 + Number(minute);
-}
-function parseBusyPeriod(stringPeriod) {
-    var reg = /[\s,+,:]/;
-    var currentData = stringPeriod.split(reg);
-    var diffZone = Number(mainZone) - Number(currentData[3]);
-    var hourWithoutZone = Number(currentData[1]);
-    var currentHour = returnHour(hourWithoutZone + diffZone);
-    var currentMinute = currentData[2];
-    var dayWithoutZone = currentData[0];
-    var currentDay = returnDayWeek(hourWithoutZone, diffZone, dayWithoutZone);
-    if (String(currentHour).length === 1) {
-        currentHour = '0' + String(currentHour);
-    }
-    if (String(currentMinute).length === 1) {
-        currentMinute = '0' + String(currentMinute);
-    }
-
-    return {
-        day: currentDay,
-        hour: currentHour,
-        minute: currentMinute
-    };
-}
-function formatShortTime(time) {
-    if (String(time).length === 1) {
-        time = '0' + String(time);
-    }
-
-    return time;
-}
-function translateMinToTime(min) {
-    var ansMin = min % 60;
-    var tempHour = min / 60;
-    var arr = String(tempHour).split('.');
-    var ansHour = arr[0];
-
-    return {
-        hour: ansHour,
-        min: ansMin
-    };
-}
-function getCountMin(currentCountFreeMin, countMin, minute) {
-    if (currentCountFreeMin === 0) {
-        return minute;
-    }
-
-    return countMin;
-}
-function searchFreeMoment(daysWeek, duration) {
-    var countMin;
-    var startRobbery = [];
-    var startAttack = '';
-    Object.keys(daysWeek).forEach(function (day) {
-        var currentCountFreeMin = 0;
-        if (startRobbery.length !== 0) {
-            startAttack = startRobbery[0];
-
-            return startAttack;
-        }
-        for (var minute in daysWeek[day]) {
-            if (daysWeek[day][minute] === 1) {
-                countMin = getCountMin(currentCountFreeMin, countMin, minute);
-
-                currentCountFreeMin++;
-            } else {
-                currentCountFreeMin = 0;
-            }
-            if (currentCountFreeMin === duration) {
-
-                startRobbery.push({
-                    day: day,
-                    timeInMin: countMin
-                });
-            }
-        }
-    });
-
-    return startAttack;
-}
-
-function changeSchedual(begin, end) {
-    var firstFrom = begin.day + ' ' + begin.hour + ':' + begin.minute;
-    firstFrom += '+' + mainZone;
-    var firstTo = begin.day + ' 23:59+' + mainZone;
-    var secondFrom = end.day + ' 00:00+' + mainZone;
-    var secondTo = end.day + ' ' + end.hour + ':' + end.minute;
-    secondTo += '+' + mainZone;
-
-    var firstPeriod = {
-        from: firstFrom,
-        to: firstTo
-    };
-    var secondPeriod = {
-        from: secondFrom,
-        to: secondTo
-    };
-
-    return [firstPeriod, secondPeriod];
-}
-function changeSchedualBigInterval(begin, end) {
-    var firstFrom = begin.day + ' ' + begin.hour + ':' + begin.minute;
-    firstFrom += '+' + mainZone;
-    var firstTo = begin.day + ' 23:59+' + mainZone;
-    var secondFrom = end.day + ' 00:00+' + mainZone;
-    var secondTo = end.day + ' ' + end.hour + ':' + end.minute + '+' + mainZone;
-    var middleFrom = signsWeekDays[Number(DAYS[begin.day]) + 1] + ' 00:00+' + mainZone;
-    var middleTo = signsWeekDays[Number(DAYS[begin.day]) + 1] + ' 23:59+' + mainZone;
-
-    var firstPeriod = {
-        from: firstFrom,
-        to: firstTo
-    };
-    var secondPeriod = {
-        from: secondFrom,
-        to: secondTo
-    };
-    var middlePeriod = {
-        from: middleFrom,
-        to: middleTo
-    };
-
-    return [firstPeriod, secondPeriod, middlePeriod];
-}
-function fillingArray(schedule, daysWeek) {
-    var beginBusy;
-    var endBusy;
-    Object.keys(schedule).forEach(function (name) {
-        schedule[name].forEach(function (period) {
-            beginBusy = parseBusyPeriod(period.from);
-            endBusy = parseBusyPeriod(period.to);
-            var beginBusyMin = timeToMinute(beginBusy.hour, beginBusy.minute);
-            var endBusyMin = timeToMinute(endBusy.hour, endBusy.minute);
-            for (var j = beginBusyMin; j < endBusyMin; j++) {
-                if (DAYS[beginBusy.day] < 4) {
-                    daysWeek[beginBusy.day][j] = 0;
-                }
-
-            }
-        });
-    });
-
-    return daysWeek;
-}
-function allBusy(schedule) {
-    var beginBusy;
-    var endBusy;
-    var check = false;
-    Object.keys(schedule).forEach(function (name) {
-        schedule[name].forEach(function (period) {
-            beginBusy = parseBusyPeriod(period.from);
-            endBusy = parseBusyPeriod(period.to);
-            if ((DAYS[beginBusy.day] === 1) && DAYS[endBusy.day] > 3) {
-                check = true;
-            }
-
-        });
-    });
-    if (check) {
-        return true;
-    }
-
-    return false;
-}
-function addNewWrites(schedule) {
-    var beginBusy;
-    var endBusy;
-    Object.keys(schedule).forEach(function (name) {
-        schedule[name].forEach(function (period) {
-            beginBusy = parseBusyPeriod(period.from);
-            endBusy = parseBusyPeriod(period.to);
-            if ((DAYS[endBusy.day] - DAYS[beginBusy.day]) === 1) {
-                var newWrites = changeSchedual(beginBusy, endBusy);
-                schedule[name].push(newWrites[0]);
-                schedule[name].push(newWrites[1]);
-            }
-            if ((DAYS[endBusy.day] - DAYS[beginBusy.day]) === 2) {
-                var writes = changeSchedualBigInterval(beginBusy, endBusy);
-                schedule[name].push(writes[0]);
-                schedule[name].push(writes[1]);
-                schedule[name].push(writes[2]);
-            }
-        });
-    });
-
-    return schedule;
-}
-function bankCloseForever(workingBankInMin) {
-    if ((workingBankInMin.to - workingBankInMin.from) === 0) {
-        return true;
-    }
-    if ((workingBankInMin.to - workingBankInMin.from) < 0) {
-        return true;
-    }
-
-    return false;
-}
-function getRobberyMoment(duration, schedule, daysWeek, bankFrom) {
-    var answer;
-    if (duration === 0) {
-        answer = {
-            day: 'ПН',
-            timeInMin: bankFrom
-        };
-    } else {
-        schedule = addNewWrites(schedule);
-        daysWeek = fillingArray(schedule, daysWeek);
-        answer = searchFreeMoment(daysWeek, duration);
-    }
-
-    return answer;
-}
-function checkUncorrect(hourFinishBank, minuteFinishBank) {
-    if (hourFinishBank > 23 || minuteFinishBank > 59) {
-        return true;
-    }
-
-    return false;
-}
 exports.getAppropriateMoment = function (schedule, duration, workingHours) {
-    var dataStartBank = workingHours.from.split(/[:,+]/);
-    var dataFinishBank = workingHours.to.split(/[:,+]/);
-    mainZone = dataStartBank[2];
-    var workingBankInMin = {
-        from: timeToMinute(dataStartBank[0], dataStartBank[1]),
-        to: timeToMinute(dataFinishBank[0], dataFinishBank[1])
-    };
+    var periods = periodsRobbery(schedule, workingHours);
+    var bankZone = convertTime(workingHours.from).zone;
+    var robberCount = Object.keys(schedule).length;
+    var countMatch = robberCount;
+    var possibleStart = null;
+    var startTime = null;
+    var durationInMilliseconds = duration * 60 * 1000;
+    periods.some(function (period) {
+        countMatch = (period.type === 'open') ? countMatch + 1 : countMatch - 1;
+        if (countMatch === robberCount + 1) {
+            possibleStart = period.time;
+        } else if (possibleStart !== null) {
+            if ((period.time - possibleStart) >= durationInMilliseconds) {
+                startTime = possibleStart;
 
-    var daysWeek = {
-        'ПН': [],
-        'ВТ': [],
-        'СР': []
-    };
+                return true;
+            }
+            possibleStart = null;
+        }
 
-    for (var i = 0; i < (workingBankInMin.to - workingBankInMin.from); i++) {
-        var minuteBank = Number(workingBankInMin.from) + i;
-        daysWeek['ПН'][minuteBank] = 1;
-        daysWeek['ВТ'][minuteBank] = 1;
-        daysWeek['СР'][minuteBank] = 1;
-    }
-    var answer = getRobberyMoment(duration, schedule, daysWeek, workingBankInMin.from);
-
-    var ansFormatTime = translateMinToTime(answer.timeInMin);
-    var checkUncorrectData = checkUncorrect(dataFinishBank[0], dataFinishBank[1]);
-    var close = bankCloseForever(workingBankInMin);
+        return false;
+    });
 
     return {
 
@@ -316,11 +142,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
          * @returns {Boolean}
          */
         exists: function () {
-            if (answer !== '' && !checkUncorrectData && !allBusy(schedule) && !close) {
-                return true;
-            }
-
-            return false;
+            return startTime !== null;
         },
 
         /**
@@ -331,17 +153,8 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
          * @returns {String}
          */
         format: function (template) {
-            if (answer !== '' && !checkUncorrectData && !allBusy(schedule) && !close) {
-                var ansHour = formatShortTime(ansFormatTime.hour);
-                var ansMin = formatShortTime(ansFormatTime.min);
-                template = template.replace(/%HH/, ansHour);
-                template = template.replace(/%MM/, ansMin);
-                template = template.replace(/%DD/, answer.day);
 
-                return template;
-            }
-
-            return '';
+            return startTime !== null ? formatView(template, startTime, bankZone) : '';
         },
 
         /**
