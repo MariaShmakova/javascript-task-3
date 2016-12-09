@@ -4,7 +4,7 @@
  * Сделано задание на звездочку
  * Реализовано оба метода и tryLater
  */
-exports.isStar = false;
+exports.isStar = true;
 
 var WEEK_DAYS = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
 var WEEK_DAYS_ROBBERY = ['ПН', 'ВТ', 'СР'];
@@ -117,23 +117,25 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     var robberCount = Object.keys(schedule).length;
     var countMatch = robberCount;
     var possibleStart = null;
-    var startTime = null;
+    var allPossibleStarts = [];
     var durationInMilliseconds = duration * 60 * 1000;
-    periods.some(function (period) {
+    periods.forEach(function (period) {
         countMatch = (period.type === 'open') ? countMatch + 1 : countMatch - 1;
         if (countMatch === robberCount + 1) {
             possibleStart = period.time;
         } else if (possibleStart !== null) {
             if ((period.time - possibleStart) >= durationInMilliseconds) {
-                startTime = possibleStart;
-
-                return true;
+                allPossibleStarts.push(
+                    {
+                        from: possibleStart,
+                        to: period.time
+                    }
+                );
             }
             possibleStart = null;
         }
-
-        return false;
     });
+    var startTime = (allPossibleStarts.length !== 0) ? allPossibleStarts[0].from : null;
 
     return {
 
@@ -163,6 +165,24 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
          * @returns {Boolean}
          */
         tryLater: function () {
+            if (allPossibleStarts.length === 0) {
+                return false;
+            }
+            var currentTime = new Date(startTime);
+            currentTime.setUTCMinutes(currentTime.getUTCMinutes() + 30);
+            for (var i = 0; i < allPossibleStarts.length; i++) {
+                var period = allPossibleStarts[i];
+                var nextTime = period.from;
+                if (currentTime > nextTime) {
+                    nextTime = currentTime;
+                }
+                if ((period.to - nextTime) >= durationInMilliseconds) {
+                    startTime = nextTime;
+
+                    return true;
+                }
+            }
+
             return false;
         }
     };
