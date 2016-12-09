@@ -8,9 +8,10 @@ exports.isStar = true;
 
 var WEEK_DAYS = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
 var WEEK_DAYS_ROBBERY = ['ПН', 'ВТ', 'СР'];
+var MINUTES_TO_MILLISECONDS = 60 * 1000;
 
 var benchmarkWeekDaysOnOctober = {
-     // 'Mon Oct 17 2016 00:00:01 GMT+0000'
+    // 'Mon Oct 17 2016 00:00:01 GMT+0000'
     'ПН': 17,
     // 'Tue Oct 18 2016 00:00:01 GMT+0000' и т.д.
     'ВТ': 18,
@@ -66,14 +67,18 @@ function periodsRobbery(schedule, workingHours) {
         to: convertTime(workingHours.to)
     };
     WEEK_DAYS_ROBBERY.forEach(function (weekDayName) {
-        periods.push({ type: 'open', time: getDate(weekDayName, bankWorkingTime.from) });
-        periods.push({ type: 'close', time: getDate(weekDayName, bankWorkingTime.to) });
+        periods.push(
+            { type: 'open', time: getDate(weekDayName, bankWorkingTime.from) },
+            { type: 'close', time: getDate(weekDayName, bankWorkingTime.to) }
+        );
     });
 
     Object.keys(schedule).forEach(function (name) {
         schedule[name].forEach(function (time) {
-            periods.push({ type: 'close', time: convertDataTime(time.from) });
-            periods.push({ type: 'open', time: convertDataTime(time.to) });
+            periods.push(
+                { type: 'close', time: convertDataTime(time.from) },
+                { type: 'open', time: convertDataTime(time.to) }
+            );
         });
     });
 
@@ -118,7 +123,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     var countMatch = robberCount;
     var possibleStart = null;
     var allPossibleStarts = [];
-    var durationInMilliseconds = duration * 60 * 1000;
+    var durationInMilliseconds = duration * MINUTES_TO_MILLISECONDS;
     periods.forEach(function (period) {
         countMatch = (period.type === 'open') ? countMatch + 1 : countMatch - 1;
         if (countMatch === robberCount + 1) {
@@ -170,8 +175,8 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
             }
             var currentTime = new Date(startTime);
             currentTime.setUTCMinutes(currentTime.getUTCMinutes() + 30);
-            for (var i = 0; i < allPossibleStarts.length; i++) {
-                var period = allPossibleStarts[i];
+
+            return allPossibleStarts.some(function (period) {
                 var nextTime = period.from;
                 if (currentTime > nextTime) {
                     nextTime = currentTime;
@@ -181,9 +186,9 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
 
                     return true;
                 }
-            }
 
-            return false;
+                return false;
+            });
         }
     };
 };
