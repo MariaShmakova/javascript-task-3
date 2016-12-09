@@ -9,6 +9,8 @@ exports.isStar = true;
 var WEEK_DAYS = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
 var WEEK_DAYS_ROBBERY = ['ПН', 'ВТ', 'СР'];
 var MINUTES_TO_MILLISECONDS = 60 * 1000;
+var REG_FOR_TIME = /[+,:]/;
+var COUNT_MINUTES_LATER = 30;
 
 var benchmarkWeekDaysOnOctober = {
     // 'Mon Oct 17 2016 00:00:01 GMT+0000'
@@ -23,8 +25,7 @@ var benchmarkWeekDaysOnOctober = {
 };
 
 function convertTime(time) {
-    var reg = /[+,:]/;
-    var arrDataTime = String(time).split(reg);
+    var arrDataTime = String(time).split(REG_FOR_TIME);
 
     return {
         hours: Number(arrDataTime[0]),
@@ -174,7 +175,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
                 return false;
             }
             var currentTime = new Date(startTime);
-            currentTime.setUTCMinutes(currentTime.getUTCMinutes() + 30);
+            currentTime.setUTCMinutes(currentTime.getUTCMinutes() + COUNT_MINUTES_LATER);
 
             return allPossibleStarts.some(function (period) {
                 var nextTime = period.from;
