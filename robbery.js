@@ -7,43 +7,30 @@
 exports.isStar = true;
 
 var WEEK_DAYS = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
-var WEEK_DAYS_ROBBERY = ['ПН', 'ВТ', 'СР'];
-var MINUTES_TO_MILLISECONDS = 60 * 1000;
-var REG_FOR_TIME = /[+,:]/;
+var WEEK_DAYS_ROBBERY = WEEK_DAYS.slice(1, 4);
 var COUNT_MINUTES_LATER = 30;
 
-var benchmarkWeekDaysOnOctober = {
-    // 'Mon Oct 17 2016 00:00:01 GMT+0000'
-    'ПН': 17,
-    // 'Tue Oct 18 2016 00:00:01 GMT+0000' и т.д.
-    'ВТ': 18,
-    'СР': 19,
-    'ЧТ': 20,
-    'ПТ': 21,
-    'СБ': 22,
-    'ВС': 23
-};
-
 function convertTime(time) {
-    var arrDataTime = String(time).split(REG_FOR_TIME);
+    var parametersTime = time.split(/[+:]/).map(Number);
 
     return {
-        hours: Number(arrDataTime[0]),
-        minutes: Number(arrDataTime[1]),
-        zone: Number(arrDataTime[2])
+        hours: parametersTime[0],
+        minutes: parametersTime[1],
+        zone: parametersTime[2]
     };
 }
 
 function getDate(weekDayName, time) {
-    var day = benchmarkWeekDaysOnOctober[weekDayName];
+    // 'Mon Oct 17 2016 00:00:01 GMT+0000'
+    var day = WEEK_DAYS.indexOf(weekDayName) + 16;
 
     return new Date(Date.UTC(2016, 9, day, time.hours - time.zone, time.minutes));
 }
 
-function convertDataTime(dataTime) {
-    var arrDataTime = String(dataTime).split(' ');
-    var weekDayName = arrDataTime[0];
-    var time = convertTime(arrDataTime[1]);
+function convertDateTime(dateTime) {
+    var parametersDateTime = dateTime.split(' ');
+    var weekDayName = parametersDateTime[0];
+    var time = convertTime(parametersDateTime[1]);
 
     return getDate(weekDayName, time);
 }
@@ -62,7 +49,6 @@ function compareTime(period1, period2) {
 
 function periodsRobbery(schedule, workingHours) {
     var periods = [];
-
     var bankWorkingTime = {
         from: convertTime(workingHours.from),
         to: convertTime(workingHours.to)
@@ -73,16 +59,14 @@ function periodsRobbery(schedule, workingHours) {
             { type: 'close', time: getDate(weekDayName, bankWorkingTime.to) }
         );
     });
-
     Object.keys(schedule).forEach(function (name) {
         schedule[name].forEach(function (time) {
             periods.push(
-                { type: 'close', time: convertDataTime(time.from) },
-                { type: 'open', time: convertDataTime(time.to) }
+                { type: 'close', time: convertDateTime(time.from) },
+                { type: 'open', time: convertDateTime(time.to) }
             );
         });
     });
-
     periods.sort(compareTime);
 
     return periods;
@@ -124,7 +108,7 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
     var countMatch = robberCount;
     var possibleStart = null;
     var allPossibleStarts = [];
-    var durationInMilliseconds = duration * MINUTES_TO_MILLISECONDS;
+    var durationInMilliseconds = duration * 60 * 1000;
     periods.forEach(function (period) {
         countMatch = (period.type === 'open') ? countMatch + 1 : countMatch - 1;
         if (countMatch === robberCount + 1) {
@@ -161,7 +145,6 @@ exports.getAppropriateMoment = function (schedule, duration, workingHours) {
          * @returns {String}
          */
         format: function (template) {
-
             return startTime !== null ? formatView(template, startTime, bankZone) : '';
         },
 
